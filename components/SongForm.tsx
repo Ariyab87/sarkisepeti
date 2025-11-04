@@ -72,7 +72,7 @@ export default function SongForm() {
         throw new Error(data.error || "Failed to submit");
       }
 
-      setStatus("Success! Email sent successfully.");
+      setStatus("✅ Sent! Redirecting...");
       console.log("✅ Email sent successfully");
       setTimeout(() => {
         router.push("/thank-you");
@@ -80,7 +80,7 @@ export default function SongForm() {
     } catch (err: any) {
       console.error("❌ Form submission error:", err);
       setError(err.message || "Submission failed");
-      setStatus(`Error: ${err.message || "Submission failed"}`);
+      setStatus(`❌ Failed: ${err.message || "Submission failed"}`);
     } finally {
       setSubmitting(false);
     }
@@ -192,7 +192,8 @@ export default function SongForm() {
           </div>
         )}
 
-        {status && <p className={`${status.includes("Error") ? "text-red-400" : "text-green-400"}`}>{status}</p>}
+        {submitting && <p className="text-yellow-400">Sending...</p>}
+        {status && <p className={`${status.includes("❌") ? "text-red-400" : "text-green-400"}`}>{status}</p>}
         {error && <p className="text-red-400">{error}</p>}
 
         <button type="submit" disabled={!productId || submitting} className="gold-button">

@@ -1,61 +1,75 @@
-// @ts-nocheck
-export async function POST(req) {
-  try {
-    console.log("📩 POST /api/sendEmail - Request received");
-    const body = await req.json();
-    console.log("📦 Request body:", { name: body.name, email: body.email, messageLength: body.message?.length });
-    const { name, email, message } = body;
+import nodemailer from "nodemailer";
+import { NextResponse } from "next/server";
 
+export async function POST(req: Request) {
+  try {
+    const { name, email, message } = await req.json();
+
+    console.log("📩 Email API called:", { name, email });
+
+    // Validate required fields
     if (!name || !email || !message) {
-      return Response.json(
+      console.error("❌ Missing required fields");
+      return NextResponse.json(
         { success: false, error: "Missing required fields: name, email, message" },
         { status: 400 }
       );
     }
 
-    const sender = process.env.TEST_EMAIL;
-    const password = process.env.TEST_EMAIL_PASS;
+    // Validate environment variables
+    const emailUser = process.env.EMAIL_USER;
+    const emailPass = process.env.EMAIL_PASS;
+    const emailReceiver = process.env.EMAIL_RECEIVER;
 
-    if (!sender || !password) {
-      console.error("Missing TEST_EMAIL or TEST_EMAIL_PASS env vars");
-      return Response.json(
+    if (!emailUser || !emailPass || !emailReceiver) {
+      console.error("❌ Missing email configuration:", {
+        hasUser: !!emailUser,
+        hasPass: !!emailPass,
+        hasReceiver: !!emailReceiver,
+      });
+      return NextResponse.json(
         { success: false, error: "Server email configuration is missing" },
         { status: 500 }
       );
     }
 
-    const nodemailer = (await import("nodemailer")).default;
-
+    // Gmail transporter
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: sender,
-        pass: password,
+        user: emailUser,
+        pass: emailPass,
       },
     });
 
-    console.log("📧 Sending email via nodemailer...");
-    await transporter.sendMail({
-      from: sender,
-      to: sender,
-      subject: `New message from ${name}`,
-      text: `From: ${name} <${email}>\n\n${message}`,
-      html: `<div style=\"font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;\">`
-          + `<h2>New message</h2>`
-          + `<p><strong>Name:</strong> ${name}</p>`
-          + `<p><strong>Email:</strong> ${email}</p>`
-          + `<p><strong>Message:</strong></p>`
-          + `<p>${String(message).replace(/\n/g, "<br/>")}</p>`
-          + `</div>`,
-    });
+    const mailOptions = {
+      from: emailUser,
+      to: emailReceiver,
+      subject: `🎵 New Order from ${name}`,
+      text: `
+Name: ${name}
+Email: ${email}
 
+Message:
+${message}
+      `.trim(),
+      html: `
+        <div style="font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;padding:20px;">
+          <h2 style="color:#D4AF37;">🎵 New Order from ${name}</h2>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+          <p><strong>Message:</strong></p>
+          <div style="background:#f5f5f5;padding:15px;border-radius:5px;white-space:pre-wrap;">${String(message).replace(/\n/g, "<br/>")}</div>
+        </div>
+      `.trim(),
+    };
+
+    await transporter.sendMail(mailOptions);
     console.log("✅ Email sent successfully");
-    return Response.json({ success: true });
-  } catch (err) {
-    console.error("sendEmail POST error", err);
-    return Response.json(
-      { success: false, error: err?.message || "Unknown error" },
-      { status: 500 }
-    );
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error("❌ Email error:", error.message);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
