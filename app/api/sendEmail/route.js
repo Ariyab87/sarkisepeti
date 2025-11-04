@@ -1,5 +1,6 @@
 export async function POST(req) {
   try {
+    console.log("📩 Email API called");
     const { name, email, message } = await req.json();
 
     if (!name || !email || !message) {
