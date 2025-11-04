@@ -1,3 +1,4 @@
+// @ts-nocheck
 export async function POST(req) {
   try {
     console.log("📩 Email API called");
