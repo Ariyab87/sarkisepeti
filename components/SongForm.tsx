@@ -23,7 +23,7 @@ export default function SongForm() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setStatus("Sending...");
+    setStatus("📨 Sending...");
     setSubmitting(true);
     setError(null);
 
@@ -63,26 +63,29 @@ export default function SongForm() {
       
       const message = messageParts.join("\n\n");
 
+      const data = { name, email, message };
+      console.log("📤 Submitting form data:", data);
+
       const res = await fetch("/api/sendEmail", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, email, message }),
+        body: JSON.stringify(data),
       });
 
       const result = await res.json();
-      
+      console.log("📩 API Response:", result);
+
       if (result.success) {
-        setStatus("✅ Message sent!");
-        setTimeout(() => {
-          window.location.href = "/thank-you";
-        }, 1500);
+        setStatus("✅ Sent successfully!");
+        window.location.href = "/thank-you";
       } else {
         setStatus("❌ Failed: " + (result.error || "Unknown error"));
+        console.error("❌ Email API error:", result);
       }
     } catch (error) {
-      console.error("Error sending form:", error);
+      console.error("🚨 Network error while sending form:", error);
       setStatus("❌ Network error");
     } finally {
       setSubmitting(false);
