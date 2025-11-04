@@ -61,7 +61,7 @@ export default function SongForm() {
       const result = await res.json();
       
       if (result.success) {
-        setStatus("✅ Message sent successfully!");
+        setStatus("✅ Sent successfully!");
         setTimeout(() => {
           window.location.href = "/thank-you";
         }, 1500);
