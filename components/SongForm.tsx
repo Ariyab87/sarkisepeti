@@ -28,8 +28,21 @@ export default function SongForm() {
     setError(null);
 
     try {
-      const name = (values.name as string) || "";
-      const email = (values.email as string) || "";
+      const name = (values.name as string)?.trim() || "";
+      const email = (values.email as string)?.trim() || "";
+      
+      // Validate required fields
+      if (!name || !email) {
+        setStatus("❌ Please fill in your name and email");
+        setSubmitting(false);
+        return;
+      }
+
+      if (!email.includes("@")) {
+        setStatus("❌ Please enter a valid email address");
+        setSubmitting(false);
+        return;
+      }
       
       // Build message from all form fields
       const currentOptions = getProductOptions(lang);
@@ -50,6 +63,8 @@ export default function SongForm() {
       
       const message = messageParts.join("\n\n");
 
+      console.log("📤 Submitting form:", { name, email, messageLength: message.length });
+
       const res = await fetch("/api/sendEmail", {
         method: "POST",
         headers: {
@@ -58,19 +73,23 @@ export default function SongForm() {
         body: JSON.stringify({ name, email, message }),
       });
 
+      console.log("📥 Response status:", res.status);
+
       const result = await res.json();
+      console.log("📊 Response data:", result);
       
-      if (result.success) {
-        setStatus("✅ Sent successfully!");
-        setTimeout(() => {
-          window.location.href = "/thank-you";
-        }, 1500);
-      } else {
-        setStatus("❌ Failed: " + (result.error || "Unknown error"));
+      if (!res.ok || !result.success) {
+        throw new Error(result.error || "Failed to send email");
       }
-    } catch (error) {
-      console.error("Error sending form:", error);
-      setStatus("❌ Network error");
+      
+      setStatus("✅ Sent successfully!");
+      setTimeout(() => {
+        window.location.href = "/thank-you";
+      }, 1500);
+    } catch (error: any) {
+      console.error("❌ Error sending form:", error);
+      setStatus("❌ Failed: " + (error.message || "Network error"));
+      setError(error.message || "Network error");
     } finally {
       setSubmitting(false);
     }
@@ -112,10 +131,11 @@ export default function SongForm() {
                 <label className="block mb-2 text-white/90">{q.label}</label>
                 {q.type === "text" && (
                   <input
-                    type="text"
+                    type={q.id === "email" ? "email" : "text"}
                     className="input-base w-full"
                     placeholder={q.placeholder}
                     required={(q as any).required}
+                    value={(values[q.id] as string) || ""}
                     onChange={(e) => updateValue(q.id, e.target.value)}
                   />
                 )}
@@ -125,6 +145,7 @@ export default function SongForm() {
                     className="input-base w-full"
                     placeholder={q.placeholder}
                     required={(q as any).required}
+                    value={(values[q.id] as string) || ""}
                     onChange={(e) => updateValue(q.id, e.target.value)}
                   />
                 )}
@@ -132,9 +153,10 @@ export default function SongForm() {
                   <select
                     className="input-base w-full bg-black/70"
                     required={(q as any).required}
+                    value={(values[q.id] as string) || ""}
                     onChange={(e) => updateValue(q.id, e.target.value)}
                   >
-                    <option value="" disabled selected>
+                    <option value="" disabled>
                       {t("selectAnOption")}
                     </option>
                     {q.options.map((opt) => (
