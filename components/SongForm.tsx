@@ -63,9 +63,6 @@ export default function SongForm() {
       
       const message = messageParts.join("\n\n");
 
-      console.log("📤 Submitting form:", { name, email, messageLength: message.length });
-      console.log("📤 Full message:", message);
-
       const res = await fetch("/api/sendEmail", {
         method: "POST",
         headers: {
@@ -74,35 +71,19 @@ export default function SongForm() {
         body: JSON.stringify({ name, email, message }),
       });
 
-      console.log("📥 Response status:", res.status);
-      console.log("📥 Response ok:", res.ok);
-
       const result = await res.json();
-      console.log("📊 Response data:", result);
       
-      if (!res.ok) {
-        console.error("❌ HTTP Error:", res.status, res.statusText);
-        throw new Error(result.error || `HTTP ${res.status}: ${res.statusText}`);
+      if (result.success) {
+        setStatus("✅ Message sent!");
+        setTimeout(() => {
+          window.location.href = "/thank-you";
+        }, 1500);
+      } else {
+        setStatus("❌ Failed: " + (result.error || "Unknown error"));
       }
-      
-      if (!result.success) {
-        console.error("❌ API returned success: false", result);
-        throw new Error(result.error || "Failed to send email");
-      }
-      
-      console.log("✅ Email sent successfully! Redirecting in 1.5s...");
-      setStatus("✅ Sent successfully!");
-      setTimeout(() => {
-        console.log("🔄 Redirecting to /thank-you");
-        window.location.href = "/thank-you";
-      }, 1500);
-    } catch (error: any) {
-      console.error("❌ Error sending form:", error);
-      console.error("❌ Error stack:", error.stack);
-      const errorMessage = error.message || "Network error";
-      setStatus("❌ Failed: " + errorMessage);
-      setError(errorMessage);
-      // DO NOT redirect on error - user should see the error message
+    } catch (error) {
+      console.error("Error sending form:", error);
+      setStatus("❌ Network error");
     } finally {
       setSubmitting(false);
     }
