@@ -22,6 +22,7 @@ export default function TopBar() {
   const { totalItems, openCart } = useCart();
   const [scrolled, setScrolled] = useState(false);
   const [showLangDropdown, setShowLangDropdown] = useState(false);
+  const [logoError, setLogoError] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -39,11 +40,19 @@ export default function TopBar() {
       }`}
     >
       <a href="/" className="hover:opacity-80 transition-opacity">
-        <img
-          src="/logo/logo.png"
-          alt="SarkıSepeti Logo"
-          className="h-36 w-auto object-contain"
-        />
+        {!logoError ? (
+          <img
+            src="/logo/logo.png"
+            alt="SarkıSepeti Logo"
+            className="h-36 w-auto object-contain"
+            onError={() => setLogoError(true)}
+            onLoad={() => setLogoError(false)}
+          />
+        ) : (
+          <div className="h-36 flex items-center justify-center text-[#D4AF37] font-bold text-xl">
+            SarkıSepeti
+          </div>
+        )}
       </a>
       <div className="hidden md:flex items-center space-x-10 text-sm tracking-widest uppercase font-medium text-white">
         <a
